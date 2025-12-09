@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown, GraduationCap } from 'lucide-react';
+import { Menu, X, ChevronDown, GraduationCap, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAdmin } from '@/contexts/AdminContext';
@@ -81,53 +81,75 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      {/* Top Bar */}
+      <div className="hidden md:block bg-gradient-hero text-primary-foreground">
         <div className="container mx-auto px-4">
-          <div className="flex h-20 items-center justify-between">
+          <div className="flex items-center justify-between py-2 text-sm">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <Phone className="h-3.5 w-3.5" />
+                <span className="font-body">1800-890-1770 (Toll-Free)</span>
+              </div>
+              <span className="font-body hidden lg:block">enquiry@vinayakintschool.com</span>
+            </div>
+            <div className="font-body text-primary-foreground/80">
+              Admissions Open for 2024-25
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-lg supports-[backdrop-filter]:bg-background/80 transition-all duration-300">
+        <div className="container mx-auto px-4">
+          <div className="flex h-16 md:h-20 items-center justify-between">
             {/* Logo */}
             <button 
               onClick={handleLogoClick}
-              className="flex items-center gap-3 cursor-pointer transition-transform hover:scale-105"
+              className="flex items-center gap-2 sm:gap-3 cursor-pointer group"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-hero shadow-soft">
-                <GraduationCap className="h-7 w-7 text-primary-foreground" />
+              <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-gradient-hero shadow-soft transition-transform duration-300 group-hover:scale-110">
+                <GraduationCap className="h-5 w-5 sm:h-7 sm:w-7 text-primary-foreground" />
               </div>
-              <div className="hidden sm:block">
-                <h1 className="font-display text-xl font-bold text-primary">
+              <div className="flex flex-col">
+                <h1 className="font-display text-base sm:text-xl font-bold text-primary leading-tight">
                   Vinayak International
                 </h1>
-                <p className="text-xs text-muted-foreground font-body">School, Hathras</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground font-body">School, Hathras</p>
               </div>
             </button>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-1">
+            <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1">
               {navItems.slice(0, 6).map((item) => (
                 <Link
                   key={item.path}
                   to={item.path}
                   className={cn(
-                    "px-3 py-2 text-sm font-medium rounded-lg transition-colors font-body",
+                    "px-2.5 xl:px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 font-body relative overflow-hidden group",
                     location.pathname === item.path
                       ? "bg-primary/10 text-primary"
                       : "text-foreground/70 hover:text-foreground hover:bg-secondary"
                   )}
                 >
                   {item.name}
+                  <span className={cn(
+                    "absolute bottom-0 left-0 w-full h-0.5 bg-primary transform transition-transform duration-300",
+                    location.pathname === item.path ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                  )} />
                 </Link>
               ))}
               <div className="relative group">
-                <button className="flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg text-foreground/70 hover:text-foreground hover:bg-secondary transition-colors font-body">
-                  More <ChevronDown className="h-4 w-4" />
+                <button className="flex items-center gap-1 px-2.5 xl:px-3 py-2 text-sm font-medium rounded-lg text-foreground/70 hover:text-foreground hover:bg-secondary transition-all duration-300 font-body">
+                  More <ChevronDown className="h-4 w-4 transition-transform duration-300 group-hover:rotate-180" />
                 </button>
-                <div className="absolute right-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                  <div className="bg-card rounded-lg shadow-card border border-border p-2 min-w-[180px]">
+                <div className="absolute right-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                  <div className="bg-card rounded-xl shadow-hover border border-border p-2 min-w-[200px] animate-fade-in">
                     {navItems.slice(6).map((item) => (
                       <Link
                         key={item.path}
                         to={item.path}
                         className={cn(
-                          "block px-3 py-2 text-sm font-medium rounded-md transition-colors font-body",
+                          "block px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 font-body",
                           location.pathname === item.path
                             ? "bg-primary/10 text-primary"
                             : "text-foreground/70 hover:text-foreground hover:bg-secondary"
@@ -142,22 +164,22 @@ export function Header() {
             </nav>
 
             {/* CTA Button & Mobile Menu */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               {isAdmin && (
-                <Link to="/admin">
-                  <Button variant="gold" size="sm" className="hidden sm:flex">
+                <Link to="/admin" className="hidden sm:block">
+                  <Button variant="gold" size="sm" className="animate-pulse-soft">
                     Admin Panel
                   </Button>
                 </Link>
               )}
               <Link to="/admissions" className="hidden md:block">
-                <Button variant="hero" size="default">
+                <Button variant="hero" size="default" className="shadow-soft hover:shadow-hover transition-all duration-300">
                   Apply Now
                 </Button>
               </Link>
               <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="lg:hidden p-2 rounded-lg hover:bg-secondary transition-colors"
+                className="lg:hidden p-2 rounded-lg hover:bg-secondary transition-all duration-300"
               >
                 {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
@@ -165,48 +187,51 @@ export function Header() {
           </div>
 
           {/* Mobile Navigation */}
-          {isOpen && (
-            <div className="lg:hidden py-4 border-t border-border animate-fade-in">
-              <nav className="flex flex-col gap-1">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setIsOpen(false)}
-                    className={cn(
-                      "px-4 py-3 text-sm font-medium rounded-lg transition-colors font-body",
-                      location.pathname === item.path
-                        ? "bg-primary/10 text-primary"
-                        : "text-foreground/70 hover:text-foreground hover:bg-secondary"
-                    )}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-                {isAdmin && (
-                  <Link
-                    to="/admin"
-                    onClick={() => setIsOpen(false)}
-                    className="px-4 py-3 text-sm font-medium rounded-lg bg-accent/10 text-accent-foreground font-body"
-                  >
-                    Admin Panel
-                  </Link>
-                )}
-                <Link to="/admissions" onClick={() => setIsOpen(false)} className="mt-2">
-                  <Button variant="hero" className="w-full">
-                    Apply Now
-                  </Button>
+          <div className={cn(
+            "lg:hidden overflow-hidden transition-all duration-500 ease-out",
+            isOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+          )}>
+            <nav className="py-4 border-t border-border flex flex-col gap-1">
+              {navItems.map((item, index) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setIsOpen(false)}
+                  className={cn(
+                    "px-4 py-3 text-sm font-medium rounded-lg transition-all duration-300 font-body animate-fade-in-up",
+                    location.pathname === item.path
+                      ? "bg-primary/10 text-primary"
+                      : "text-foreground/70 hover:text-foreground hover:bg-secondary"
+                  )}
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  {item.name}
                 </Link>
-              </nav>
-            </div>
-          )}
+              ))}
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  onClick={() => setIsOpen(false)}
+                  className="px-4 py-3 text-sm font-medium rounded-lg bg-accent/10 text-accent-foreground font-body animate-fade-in-up"
+                  style={{ animationDelay: '500ms' }}
+                >
+                  Admin Panel
+                </Link>
+              )}
+              <Link to="/admissions" onClick={() => setIsOpen(false)} className="mt-2 animate-fade-in-up" style={{ animationDelay: '550ms' }}>
+                <Button variant="hero" className="w-full">
+                  Apply Now
+                </Button>
+              </Link>
+            </nav>
+          </div>
         </div>
       </header>
 
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md animate-scale-in">
           <DialogHeader>
-            <DialogTitle className="font-display">Admin Access</DialogTitle>
+            <DialogTitle className="font-display text-xl">Admin Access</DialogTitle>
           </DialogHeader>
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <Input

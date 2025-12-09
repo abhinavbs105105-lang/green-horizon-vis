@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 interface AdmissionForm {
   id: string;
@@ -23,6 +23,15 @@ interface ContactForm {
   submittedAt: string;
 }
 
+interface GalleryImage {
+  id: string;
+  url: string;
+  title: string;
+  description: string;
+  category: string;
+  uploadedAt: string;
+}
+
 interface AdminContextType {
   isAdmin: boolean;
   setIsAdmin: (value: boolean) => void;
@@ -32,14 +41,47 @@ interface AdminContextType {
   addContactForm: (form: Omit<ContactForm, 'id' | 'submittedAt'>) => void;
   deleteAdmissionForm: (id: string) => void;
   deleteContactForm: (id: string) => void;
+  galleryImages: GalleryImage[];
+  addGalleryImage: (image: Omit<GalleryImage, 'id' | 'uploadedAt'>) => void;
+  deleteGalleryImage: (id: string) => void;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
+// Load from localStorage
+const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
+  try {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : defaultValue;
+  } catch {
+    return defaultValue;
+  }
+};
+
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
-  const [admissionForms, setAdmissionForms] = useState<AdmissionForm[]>([]);
-  const [contactForms, setContactForms] = useState<ContactForm[]>([]);
+  const [admissionForms, setAdmissionForms] = useState<AdmissionForm[]>(() => 
+    loadFromStorage('vis_admissions', [])
+  );
+  const [contactForms, setContactForms] = useState<ContactForm[]>(() => 
+    loadFromStorage('vis_contacts', [])
+  );
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(() => 
+    loadFromStorage('vis_gallery', [])
+  );
+
+  // Persist to localStorage
+  useEffect(() => {
+    localStorage.setItem('vis_admissions', JSON.stringify(admissionForms));
+  }, [admissionForms]);
+
+  useEffect(() => {
+    localStorage.setItem('vis_contacts', JSON.stringify(contactForms));
+  }, [contactForms]);
+
+  useEffect(() => {
+    localStorage.setItem('vis_gallery', JSON.stringify(galleryImages));
+  }, [galleryImages]);
 
   const addAdmissionForm = (form: Omit<AdmissionForm, 'id' | 'submittedAt'>) => {
     const newForm: AdmissionForm = {
@@ -67,6 +109,19 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     setContactForms(prev => prev.filter(form => form.id !== id));
   };
 
+  const addGalleryImage = (image: Omit<GalleryImage, 'id' | 'uploadedAt'>) => {
+    const newImage: GalleryImage = {
+      ...image,
+      id: crypto.randomUUID(),
+      uploadedAt: new Date().toISOString(),
+    };
+    setGalleryImages(prev => [...prev, newImage]);
+  };
+
+  const deleteGalleryImage = (id: string) => {
+    setGalleryImages(prev => prev.filter(img => img.id !== id));
+  };
+
   return (
     <AdminContext.Provider value={{
       isAdmin,
@@ -77,6 +132,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       addContactForm,
       deleteAdmissionForm,
       deleteContactForm,
+      galleryImages,
+      addGalleryImage,
+      deleteGalleryImage,
     }}>
       {children}
     </AdminContext.Provider>
