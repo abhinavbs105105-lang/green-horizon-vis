@@ -1,16 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Image, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useAdmin } from '@/contexts/AdminContext';
+
+interface GalleryImage {
+  id: string;
+  url: string;
+  title: string;
+  description: string | null;
+  category: string;
+}
 
 const defaultGalleryItems = [
-  { id: 'd1', type: 'image', category: 'campus', title: 'Main Building', description: 'Our beautiful main school building', url: '' },
-  { id: 'd2', type: 'image', category: 'classroom', title: 'Smart Classroom', description: 'Interactive learning environment', url: '' },
-  { id: 'd3', type: 'image', category: 'sports', title: 'Sports Day', description: 'Annual sports competition', url: '' },
-  { id: 'd4', type: 'image', category: 'events', title: 'Annual Day', description: 'Cultural performances by students', url: '' },
-  { id: 'd5', type: 'image', category: 'campus', title: 'Library', description: 'Well-stocked library', url: '' },
-  { id: 'd6', type: 'image', category: 'sports', title: 'Swimming Pool', description: 'Olympic-size swimming pool', url: '' },
-  { id: 'd7', type: 'image', category: 'classroom', title: 'Computer Lab', description: 'Modern IT infrastructure', url: '' },
-  { id: 'd8', type: 'image', category: 'events', title: 'Independence Day', description: 'Flag hoisting ceremony', url: '' },
+  { id: 'd1', category: 'campus', title: 'Main Building', description: 'Our beautiful main school building', url: '' },
+  { id: 'd2', category: 'classroom', title: 'Smart Classroom', description: 'Interactive learning environment', url: '' },
+  { id: 'd3', category: 'sports', title: 'Sports Day', description: 'Annual sports competition', url: '' },
+  { id: 'd4', category: 'events', title: 'Annual Day', description: 'Cultural performances by students', url: '' },
+  { id: 'd5', category: 'campus', title: 'Library', description: 'Well-stocked library', url: '' },
+  { id: 'd6', category: 'sports', title: 'Swimming Pool', description: 'Olympic-size swimming pool', url: '' },
+  { id: 'd7', category: 'classroom', title: 'Computer Lab', description: 'Modern IT infrastructure', url: '' },
+  { id: 'd8', category: 'events', title: 'Independence Day', description: 'Flag hoisting ceremony', url: '' },
 ];
 
 const categories = [
@@ -24,16 +32,32 @@ const categories = [
 export default function GalleryPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const { galleryImages } = useAdmin();
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Merge admin-uploaded images with defaults
+  useEffect(() => {
+    fetchGalleryImages();
+  }, []);
+
+  const fetchGalleryImages = async () => {
+    const { data, error } = await supabase
+      .from('gallery_images')
+      .select('*')
+      .order('uploaded_at', { ascending: false });
+
+    if (!error && data) {
+      setGalleryImages(data);
+    }
+    setLoading(false);
+  };
+
+  // Merge uploaded images with defaults (uploaded first)
   const allItems = [
     ...galleryImages.map(img => ({
       id: img.id,
-      type: 'image' as const,
       category: img.category,
       title: img.title,
-      description: img.description,
+      description: img.description || '',
       url: img.url,
     })),
     ...defaultGalleryItems,
@@ -101,45 +125,53 @@ export default function GalleryPage() {
             ))}
           </div>
 
-          {/* Gallery Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-            {filteredItems.map((item, index) => (
-              <div
-                key={item.id}
-                onClick={() => setSelectedIndex(index)}
-                className="aspect-square rounded-xl overflow-hidden cursor-pointer group relative shadow-soft hover:shadow-hover transition-all duration-500 hover-lift animate-fade-in-up"
-                style={{ animationDelay: `${(index % 8) * 75}ms` }}
-              >
-                {item.url ? (
-                  <img 
-                    src={item.url} 
-                    alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-soft">
-                    <Image className="h-10 w-10 md:h-12 md:w-12 text-primary/30" />
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-400">
-                  <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-400">
-                    <h3 className="font-display font-semibold text-primary-foreground text-sm md:text-base">
-                      {item.title}
-                    </h3>
-                    <p className="font-body text-primary-foreground/80 text-xs md:text-sm line-clamp-2">
-                      {item.description}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {filteredItems.length === 0 && (
-            <div className="text-center py-12 animate-fade-in">
-              <Image className="h-16 w-16 text-muted-foreground mx-auto mb-4 animate-float" />
-              <p className="font-body text-muted-foreground">No photos found in this category.</p>
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
+          ) : (
+            <>
+              {/* Gallery Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                {filteredItems.map((item, index) => (
+                  <div
+                    key={item.id}
+                    onClick={() => setSelectedIndex(index)}
+                    className="aspect-square rounded-xl overflow-hidden cursor-pointer group relative shadow-soft hover:shadow-hover transition-all duration-500 hover-lift animate-fade-in-up"
+                    style={{ animationDelay: `${(index % 8) * 75}ms` }}
+                  >
+                    {item.url ? (
+                      <img 
+                        src={item.url} 
+                        alt={item.title}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-soft">
+                        <Image className="h-10 w-10 md:h-12 md:w-12 text-primary/30" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-400">
+                      <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-400">
+                        <h3 className="font-display font-semibold text-primary-foreground text-sm md:text-base">
+                          {item.title}
+                        </h3>
+                        <p className="font-body text-primary-foreground/80 text-xs md:text-sm line-clamp-2">
+                          {item.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {filteredItems.length === 0 && (
+                <div className="text-center py-12 animate-fade-in">
+                  <Image className="h-16 w-16 text-muted-foreground mx-auto mb-4 animate-float" />
+                  <p className="font-body text-muted-foreground">No photos found in this category.</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>

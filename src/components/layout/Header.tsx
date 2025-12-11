@@ -22,6 +22,7 @@ const navItems = [
   { name: 'Facilities', path: '/facilities' },
   { name: 'Gallery', path: '/gallery' },
   { name: 'Events & Notices', path: '/events' },
+  { name: 'Rules', path: '/rules' },
   { name: 'Parent Resources', path: '/parents' },
   { name: 'Contact Us', path: '/contact' },
 ];

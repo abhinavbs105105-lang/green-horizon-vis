@@ -15,6 +15,8 @@ import GalleryPage from "./pages/GalleryPage";
 import EventsPage from "./pages/EventsPage";
 import ParentsPage from "./pages/ParentsPage";
 import ContactPage from "./pages/ContactPage";
+import RulesPage from "./pages/RulesPage";
+import AuthPage from "./pages/AuthPage";
 import AdminPage from "./pages/AdminPage";
 import NotFound from "./pages/NotFound";
 
@@ -39,6 +41,8 @@ const App = () => (
               <Route path="/events" element={<EventsPage />} />
               <Route path="/parents" element={<ParentsPage />} />
               <Route path="/contact" element={<ContactPage />} />
+              <Route path="/rules" element={<RulesPage />} />
+              <Route path="/auth" element={<AuthPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
