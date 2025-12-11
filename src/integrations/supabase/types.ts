@@ -14,16 +14,204 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admission_forms: {
+        Row: {
+          address: string
+          class_applying: string
+          date_of_birth: string
+          email: string
+          id: string
+          parent_name: string
+          phone: string
+          previous_school: string | null
+          student_name: string
+          submitted_at: string
+        }
+        Insert: {
+          address: string
+          class_applying: string
+          date_of_birth: string
+          email: string
+          id?: string
+          parent_name: string
+          phone: string
+          previous_school?: string | null
+          student_name: string
+          submitted_at?: string
+        }
+        Update: {
+          address?: string
+          class_applying?: string
+          date_of_birth?: string
+          email?: string
+          id?: string
+          parent_name?: string
+          phone?: string
+          previous_school?: string | null
+          student_name?: string
+          submitted_at?: string
+        }
+        Relationships: []
+      }
+      contact_forms: {
+        Row: {
+          email: string
+          id: string
+          message: string
+          name: string
+          phone: string
+          subject: string
+          submitted_at: string
+        }
+        Insert: {
+          email: string
+          id?: string
+          message: string
+          name: string
+          phone: string
+          subject: string
+          submitted_at?: string
+        }
+        Update: {
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          phone?: string
+          subject?: string
+          submitted_at?: string
+        }
+        Relationships: []
+      }
+      gallery_images: {
+        Row: {
+          category: string
+          description: string | null
+          id: string
+          title: string
+          uploaded_at: string
+          url: string
+        }
+        Insert: {
+          category?: string
+          description?: string | null
+          id?: string
+          title: string
+          uploaded_at?: string
+          url: string
+        }
+        Update: {
+          category?: string
+          description?: string | null
+          id?: string
+          title?: string
+          uploaded_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      parent_resources: {
+        Row: {
+          category: string
+          description: string | null
+          file_name: string
+          file_type: string
+          file_url: string
+          id: string
+          is_active: boolean
+          title: string
+          uploaded_at: string
+        }
+        Insert: {
+          category?: string
+          description?: string | null
+          file_name: string
+          file_type: string
+          file_url: string
+          id?: string
+          is_active?: boolean
+          title: string
+          uploaded_at?: string
+        }
+        Update: {
+          category?: string
+          description?: string | null
+          file_name?: string
+          file_type?: string
+          file_url?: string
+          id?: string
+          is_active?: boolean
+          title?: string
+          uploaded_at?: string
+        }
+        Relationships: []
+      }
+      school_rules: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          id: string
+          is_active: boolean
+          order_index: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          content: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +338,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
