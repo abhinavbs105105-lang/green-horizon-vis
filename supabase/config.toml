@@ -1,1 +1,7 @@
 project_id = "dtckdxopgabalipsmbve"
+
+[functions.vis-ai-chat]
+verify_jwt = false
+
+[functions.generate-quiz]
+verify_jwt = false
