@@ -18,6 +18,8 @@ import ContactPage from "./pages/ContactPage";
 import RulesPage from "./pages/RulesPage";
 import AuthPage from "./pages/AuthPage";
 import AdminPage from "./pages/AdminPage";
+import VISAIPage from "./pages/VISAIPage";
+import QuizPage from "./pages/QuizPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +44,8 @@ const App = () => (
               <Route path="/parents" element={<ParentsPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/rules" element={<RulesPage />} />
+              <Route path="/vis-ai" element={<VISAIPage />} />
+              <Route path="/quiz" element={<QuizPage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="*" element={<NotFound />} />
