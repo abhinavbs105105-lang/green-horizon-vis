@@ -2,8 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Loader2, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -15,7 +17,48 @@ const VISAIPage = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
   const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vis-ai-chat`;
+
+  // Handle /@add command to save data
+  const handleAddCommand = async (content: string): Promise<boolean> => {
+    const dataToSave = content.slice(5).trim(); // Remove "/@add " prefix
+    
+    if (!dataToSave) {
+      setMessages(prev => [...prev, 
+        { role: 'user', content },
+        { role: 'assistant', content: '❌ Please provide some data after /@add. Example: /@add My favorite subject is Math.' }
+      ]);
+      return true;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('vis_ai_data')
+        .insert({ content: dataToSave });
+
+      if (error) throw error;
+
+      setMessages(prev => [...prev, 
+        { role: 'user', content },
+        { role: 'assistant', content: `✅ Data saved successfully!\n\n📝 **Saved:** "${dataToSave}"\n\nI'll remember this information for future conversations.` }
+      ]);
+      
+      toast({
+        title: "Data Saved",
+        description: "Your information has been stored successfully.",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error saving data:', error);
+      setMessages(prev => [...prev, 
+        { role: 'user', content },
+        { role: 'assistant', content: '❌ Sorry, there was an error saving your data. Please try again.' }
+      ]);
+      return true;
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -28,7 +71,18 @@ const VISAIPage = () => {
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
-    const userMessage: Message = { role: 'user', content: input.trim() };
+    const trimmedInput = input.trim();
+    
+    // Check for /@add command
+    if (trimmedInput.toLowerCase().startsWith('/@add')) {
+      setInput('');
+      setIsLoading(true);
+      await handleAddCommand(trimmedInput);
+      setIsLoading(false);
+      return;
+    }
+
+    const userMessage: Message = { role: 'user', content: trimmedInput };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
@@ -158,6 +212,11 @@ const VISAIPage = () => {
                   <Bot className="h-16 w-16 mx-auto mb-4 text-primary/30" />
                   <p className="text-lg">Start a conversation with VIS-AI!</p>
                   <p className="text-sm mt-2">Ask about any subject or topic you'd like to learn.</p>
+                  <div className="mt-4 p-3 bg-primary/5 rounded-lg text-left">
+                    <p className="text-xs font-medium flex items-center gap-1">
+                      <Database className="h-3 w-3" /> Tip: Use <code className="bg-primary/10 px-1 rounded">/@add</code> to save information
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
