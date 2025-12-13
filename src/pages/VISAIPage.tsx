@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Send, Bot, User, Sparkles, Loader2, Database, ImageIcon } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Loader2, ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -285,10 +285,7 @@ const VISAIPage = () => {
                   <Bot className="h-16 w-16 mx-auto mb-4 text-primary/30" />
                   <p className="text-lg">Start a conversation with VIS-AI!</p>
                   <p className="text-sm mt-2">Ask about any subject or topic you'd like to learn.</p>
-                  <div className="mt-4 p-3 bg-primary/5 rounded-lg text-left space-y-2">
-                    <p className="text-xs font-medium flex items-center gap-1">
-                      <Database className="h-3 w-3" /> Tip: Use <code className="bg-primary/10 px-1 rounded">/@add</code> to save information
-                    </p>
+                  <div className="mt-4 p-3 bg-primary/5 rounded-lg text-left">
                     <p className="text-xs font-medium flex items-center gap-1">
                       <ImageIcon className="h-3 w-3" /> Tip: Use <code className="bg-primary/10 px-1 rounded">/@image</code> to generate images
                     </p>
