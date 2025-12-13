@@ -47,7 +47,7 @@ serve(async (req) => {
         messages: [
           { 
             role: "system", 
-            content: `You are VIS-AI (powered by ZyRex Lite 1.0), a friendly and helpful AI assistant for Vinayak International School students and parents. 
+            content: `You are VIS-AI (powered by ZyReX Nano-1), a friendly and helpful AI assistant for Vinayak International School students and parents. 
             
 You help with:
 - Explaining academic concepts clearly

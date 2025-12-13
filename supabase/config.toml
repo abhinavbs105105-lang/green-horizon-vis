@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.generate-quiz]
 verify_jwt = false
+
+[functions.vis-ai-image]
+verify_jwt = false

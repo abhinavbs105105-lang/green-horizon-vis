@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Send, Bot, User, Sparkles, Loader2, Database } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Loader2, Database, ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  imageUrl?: string;
 }
 
 const VISAIPage = () => {
@@ -19,6 +20,7 @@ const VISAIPage = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vis-ai-chat`;
+  const IMAGE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vis-ai-image`;
 
   // Handle /@add command to save data
   const handleAddCommand = async (content: string): Promise<boolean> => {
@@ -60,6 +62,68 @@ const VISAIPage = () => {
     }
   };
 
+  // Handle /@image command to generate images
+  const handleImageCommand = async (content: string): Promise<boolean> => {
+    const prompt = content.slice(7).trim(); // Remove "/@image " prefix
+    
+    if (!prompt) {
+      setMessages(prev => [...prev, 
+        { role: 'user', content },
+        { role: 'assistant', content: '❌ Please provide a description after /@image. Example: /@image a beautiful sunset over mountains' }
+      ]);
+      return true;
+    }
+
+    setMessages(prev => [...prev, 
+      { role: 'user', content },
+      { role: 'assistant', content: '🎨 Generating your image...' }
+    ]);
+
+    try {
+      const response = await fetch(IMAGE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate image');
+      }
+
+      const data = await response.json();
+      
+      if (data.imageUrl) {
+        setMessages(prev => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1] = {
+            role: 'assistant',
+            content: `✨ Here's your generated image for: "${prompt}"`,
+            imageUrl: data.imageUrl,
+          };
+          return newMessages;
+        });
+      } else {
+        throw new Error('No image returned');
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Image generation error:', error);
+      setMessages(prev => {
+        const newMessages = [...prev];
+        newMessages[newMessages.length - 1] = {
+          role: 'assistant',
+          content: '❌ Sorry, I couldn\'t generate that image. Please try again with a different prompt.',
+        };
+        return newMessages;
+      });
+      return true;
+    }
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -78,6 +142,15 @@ const VISAIPage = () => {
       setInput('');
       setIsLoading(true);
       await handleAddCommand(trimmedInput);
+      setIsLoading(false);
+      return;
+    }
+
+    // Check for /@image command
+    if (trimmedInput.toLowerCase().startsWith('/@image')) {
+      setInput('');
+      setIsLoading(true);
+      await handleImageCommand(trimmedInput);
       setIsLoading(false);
       return;
     }
@@ -188,7 +261,7 @@ const VISAIPage = () => {
             transition={{ delay: 0.2 }}
             className="text-sm text-muted-foreground font-medium tracking-wide"
           >
-            Powered by ZyRex Lite 1.0
+            Powered by ZyReX Nano-1
           </motion.p>
           <motion.p
             initial={{ opacity: 0 }}
@@ -212,9 +285,12 @@ const VISAIPage = () => {
                   <Bot className="h-16 w-16 mx-auto mb-4 text-primary/30" />
                   <p className="text-lg">Start a conversation with VIS-AI!</p>
                   <p className="text-sm mt-2">Ask about any subject or topic you'd like to learn.</p>
-                  <div className="mt-4 p-3 bg-primary/5 rounded-lg text-left">
+                  <div className="mt-4 p-3 bg-primary/5 rounded-lg text-left space-y-2">
                     <p className="text-xs font-medium flex items-center gap-1">
                       <Database className="h-3 w-3" /> Tip: Use <code className="bg-primary/10 px-1 rounded">/@add</code> to save information
+                    </p>
+                    <p className="text-xs font-medium flex items-center gap-1">
+                      <ImageIcon className="h-3 w-3" /> Tip: Use <code className="bg-primary/10 px-1 rounded">/@image</code> to generate images
                     </p>
                   </div>
                 </div>
@@ -242,6 +318,13 @@ const VISAIPage = () => {
                     }`}
                   >
                     <p className="whitespace-pre-wrap">{message.content}</p>
+                    {message.imageUrl && (
+                      <img 
+                        src={message.imageUrl} 
+                        alt="Generated" 
+                        className="mt-3 rounded-lg max-w-full h-auto shadow-md"
+                      />
+                    )}
                   </div>
                   {message.role === 'user' && (
                     <div className="p-2 bg-accent rounded-lg h-fit">
