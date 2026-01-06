@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { classLevel, subject, chapters } = await req.json();
+    const { classLevel, subject, chapters, difficulty = 'medium', questionCount = 10 } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -19,6 +19,14 @@ serve(async (req) => {
     }
 
     const chaptersText = chapters.join(", ");
+    
+    const difficultyDescriptions: Record<string, string> = {
+      easy: "simple and straightforward, focusing on basic recall and fundamental concepts. Use simple language appropriate for beginners.",
+      medium: "moderately challenging, requiring understanding and application of concepts. Include some analytical thinking.",
+      hard: "challenging and complex, requiring critical thinking, analysis, and deeper understanding. Include multi-step problems and application-based questions."
+    };
+
+    const difficultyInstruction = difficultyDescriptions[difficulty] || difficultyDescriptions.medium;
     
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -31,12 +39,15 @@ serve(async (req) => {
         messages: [
           { 
             role: "system", 
-            content: `You are an educational quiz generator for Indian school curriculum. Generate exactly 10 multiple choice questions (MCQs) based on the given class level, subject, and chapters.
+            content: `You are an educational quiz generator for Indian school curriculum (NCERT). Generate exactly ${questionCount} multiple choice questions (MCQs) based on the given class level, subject, and chapters.
+
+DIFFICULTY LEVEL: ${difficulty.toUpperCase()}
+Questions should be ${difficultyInstruction}
 
 IMPORTANT: You must respond ONLY with a valid JSON array, no additional text or markdown.
 
 Each question must have:
-- "id": a unique number (1-10)
+- "id": a unique number (1-${questionCount})
 - "question": the question text
 - "options": an array of exactly 4 options (A, B, C, D)
 - "correctAnswer": the index of the correct option (0-3)
@@ -44,11 +55,12 @@ Each question must have:
 
 Make questions age-appropriate for the class level.
 Cover the selected chapters proportionally.
-Include a mix of easy, medium, and hard questions.`
+All questions should match the ${difficulty} difficulty level consistently.
+Base questions on NCERT curriculum content.`
           },
           { 
             role: "user", 
-            content: `Generate 10 MCQs for:
+            content: `Generate ${questionCount} ${difficulty.toUpperCase()} level MCQs for:
 Class: ${classLevel}
 Subject: ${subject}
 Chapters: ${chaptersText}
@@ -56,7 +68,7 @@ Chapters: ${chaptersText}
 Respond with ONLY a JSON array of questions, no markdown or extra text.`
           }
         ],
-        temperature: 0.7,
+        temperature: difficulty === 'easy' ? 0.5 : difficulty === 'hard' ? 0.8 : 0.7,
       }),
     });
 
