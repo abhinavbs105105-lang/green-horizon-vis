@@ -20,6 +20,7 @@ import AuthPage from "./pages/AuthPage";
 import AdminPage from "./pages/AdminPage";
 import VISAIPage from "./pages/VISAIPage";
 import QuizPage from "./pages/QuizPage";
+import AnonymousMessagesPage from "./pages/AnonymousMessagesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/rules" element={<RulesPage />} />
               <Route path="/vis-ai" element={<VISAIPage />} />
               <Route path="/quiz" element={<QuizPage />} />
+              <Route path="/anonymous-messages" element={<AnonymousMessagesPage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="*" element={<NotFound />} />
