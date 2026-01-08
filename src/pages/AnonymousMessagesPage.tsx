@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,10 +6,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, Send, Search, CheckCircle, Clock, MessageCircle } from "lucide-react";
+import { MessageSquare, Send, Search, CheckCircle, Clock, MessageCircle, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollReveal } from "@/components/animations/ScrollReveal";
+
+interface PublicMessage {
+  id: string;
+  message: string;
+  admin_reply: string | null;
+  replied_at: string | null;
+  submitted_at: string;
+}
 
 const AnonymousMessagesPage = () => {
   const [message, setMessage] = useState("");
@@ -17,6 +25,8 @@ const AnonymousMessagesPage = () => {
   const [submittedCode, setSubmittedCode] = useState<string | null>(null);
   const [checkCode, setCheckCode] = useState("");
   const [isChecking, setIsChecking] = useState(false);
+  const [publicMessages, setPublicMessages] = useState<PublicMessage[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(true);
   const [foundMessage, setFoundMessage] = useState<{
     message: string;
     admin_reply: string | null;
@@ -25,11 +35,38 @@ const AnonymousMessagesPage = () => {
   } | null>(null);
   const { toast } = useToast();
 
+  // Fetch public messages
+  const fetchPublicMessages = async () => {
+    setLoadingMessages(true);
+    const { data, error } = await supabase
+      .from("anonymous_messages")
+      .select("id, message, admin_reply, replied_at, submitted_at")
+      .order("submitted_at", { ascending: false });
+
+    if (!error && data) {
+      setPublicMessages(data);
+    }
+    setLoadingMessages(false);
+  };
+
+  useEffect(() => {
+    fetchPublicMessages();
+  }, []);
+
   const handleSubmit = async () => {
     if (!message.trim()) {
       toast({
         title: "Message Required",
         description: "Please enter your message before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (message.trim().length > 1000) {
+      toast({
+        title: "Message Too Long",
+        description: "Message must be less than 1000 characters.",
         variant: "destructive",
       });
       return;
@@ -47,6 +84,7 @@ const AnonymousMessagesPage = () => {
 
       setSubmittedCode(data.message_code);
       setMessage("");
+      fetchPublicMessages(); // Refresh the list
       toast({
         title: "Message Sent!",
         description: "Your anonymous message has been submitted successfully.",
@@ -122,9 +160,13 @@ const AnonymousMessagesPage = () => {
 
       {/* Main Content */}
       <section className="py-16">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <Tabs defaultValue="send" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <Tabs defaultValue="messages" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 mb-8">
+              <TabsTrigger value="messages" className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                All Messages
+              </TabsTrigger>
               <TabsTrigger value="send" className="flex items-center gap-2">
                 <Send className="w-4 h-4" />
                 Send Message
@@ -134,6 +176,77 @@ const AnonymousMessagesPage = () => {
                 Check Reply
               </TabsTrigger>
             </TabsList>
+
+            {/* Public Messages Feed */}
+            <TabsContent value="messages">
+              <ScrollReveal>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5 text-primary" />
+                      Community Messages
+                    </CardTitle>
+                    <CardDescription>
+                      See what students are saying and school responses
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingMessages ? (
+                      <div className="flex justify-center py-8">
+                        <Clock className="w-8 h-8 animate-spin text-primary" />
+                      </div>
+                    ) : publicMessages.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No messages yet. Be the first to share!</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                        {publicMessages.map((msg, index) => (
+                          <motion.div
+                            key={msg.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className="border rounded-lg p-4 space-y-3"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <MessageCircle className="w-4 h-4 text-primary" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm text-foreground">{msg.message}</p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {new Date(msg.submitted_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+
+                            {msg.admin_reply ? (
+                              <div className="ml-11 bg-primary/10 border border-primary/20 rounded-lg p-3">
+                                <p className="text-xs text-primary font-medium mb-1 flex items-center gap-1">
+                                  <CheckCircle className="w-3 h-3" />
+                                  School's Reply
+                                </p>
+                                <p className="text-sm text-foreground">{msg.admin_reply}</p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {new Date(msg.replied_at!).toLocaleDateString()}
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="ml-11 text-xs text-muted-foreground flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                Awaiting response...
+                              </div>
+                            )}
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </ScrollReveal>
+            </TabsContent>
 
             <TabsContent value="send">
               <ScrollReveal>
