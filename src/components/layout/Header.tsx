@@ -20,6 +20,7 @@ const navItems = [
   { name: 'Academics', path: '/academics' },
   { name: 'VIS-AI', path: '/vis-ai' },
   { name: 'Quiz', path: '/quiz' },
+  { name: 'Anonymous Messages', path: '/anonymous-messages' },
   { name: 'Facilities', path: '/facilities' },
   { name: 'Gallery', path: '/gallery' },
   { name: 'Events & Notices', path: '/events' },

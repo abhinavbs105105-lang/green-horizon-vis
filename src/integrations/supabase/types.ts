@@ -53,6 +53,36 @@ export type Database = {
         }
         Relationships: []
       }
+      anonymous_messages: {
+        Row: {
+          admin_reply: string | null
+          id: string
+          is_read: boolean
+          message: string
+          message_code: string
+          replied_at: string | null
+          submitted_at: string
+        }
+        Insert: {
+          admin_reply?: string | null
+          id?: string
+          is_read?: boolean
+          message: string
+          message_code?: string
+          replied_at?: string | null
+          submitted_at?: string
+        }
+        Update: {
+          admin_reply?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          message_code?: string
+          replied_at?: string | null
+          submitted_at?: string
+        }
+        Relationships: []
+      }
       contact_forms: {
         Row: {
           email: string

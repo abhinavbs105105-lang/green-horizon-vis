@@ -38,7 +38,10 @@ import {
   Scale,
   FolderOpen,
   Edit,
-  LogOut
+  LogOut,
+  MessageCircle,
+  Send,
+  CheckCircle
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import {
@@ -134,6 +137,16 @@ interface GalleryImage {
   uploaded_at: string;
 }
 
+interface AnonymousMessage {
+  id: string;
+  message: string;
+  message_code: string;
+  is_read: boolean;
+  admin_reply: string | null;
+  replied_at: string | null;
+  submitted_at: string;
+}
+
 export default function AdminPage() {
   const navigate = useNavigate();
   const { isAdmin: contextIsAdmin } = useAdmin();
@@ -145,6 +158,7 @@ export default function AdminPage() {
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [rules, setRules] = useState<SchoolRule[]>([]);
   const [resources, setResources] = useState<ParentResource[]>([]);
+  const [anonymousMessages, setAnonymousMessages] = useState<AnonymousMessage[]>([]);
   const [loading, setLoading] = useState(true);
 
   // UI states
@@ -154,6 +168,8 @@ export default function AdminPage() {
   const [showFormDetails, setShowFormDetails] = useState<any>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: string; id: string } | null>(null);
   const [editingRule, setEditingRule] = useState<SchoolRule | null>(null);
+  const [replyingMessage, setReplyingMessage] = useState<AnonymousMessage | null>(null);
+  const [replyText, setReplyText] = useState('');
 
   // Form states
   const [newImage, setNewImage] = useState({ title: '', description: '', category: 'campus', url: '' });
@@ -191,6 +207,7 @@ export default function AdminPage() {
       fetchGallery(),
       fetchRules(),
       fetchResources(),
+      fetchAnonymousMessages(),
     ]);
     setLoading(false);
   };
@@ -218,6 +235,11 @@ export default function AdminPage() {
   const fetchResources = async () => {
     const { data } = await supabase.from('parent_resources').select('*').order('uploaded_at', { ascending: false });
     if (data) setResources(data);
+  };
+
+  const fetchAnonymousMessages = async () => {
+    const { data } = await supabase.from('anonymous_messages').select('*').order('submitted_at', { ascending: false });
+    if (data) setAnonymousMessages(data);
   };
 
   // Image handlers
@@ -382,6 +404,48 @@ export default function AdminPage() {
     setDeleteConfirm(null);
   };
 
+  // Anonymous message handlers
+  const handleReplyMessage = async () => {
+    if (!replyingMessage || !replyText.trim()) {
+      toast({ title: "Please enter a reply", variant: "destructive" });
+      return;
+    }
+
+    const { error } = await supabase
+      .from('anonymous_messages')
+      .update({ 
+        admin_reply: replyText.trim(), 
+        replied_at: new Date().toISOString(),
+        is_read: true 
+      })
+      .eq('id', replyingMessage.id);
+
+    if (error) {
+      toast({ title: "Failed to send reply", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Reply sent successfully!" });
+      setReplyingMessage(null);
+      setReplyText('');
+      fetchAnonymousMessages();
+    }
+  };
+
+  const handleDeleteAnonymousMessage = async (id: string) => {
+    const { error } = await supabase.from('anonymous_messages').delete().eq('id', id);
+    if (!error) {
+      toast({ title: "Message deleted" });
+      fetchAnonymousMessages();
+    }
+    setDeleteConfirm(null);
+  };
+
+  const handleMarkAsRead = async (id: string) => {
+    const { error } = await supabase.from('anonymous_messages').update({ is_read: true }).eq('id', id);
+    if (!error) {
+      fetchAnonymousMessages();
+    }
+  };
+
   const exportToCSV = (data: any[], filename: string) => {
     const headers = Object.keys(data[0] || {}).join(',');
     const rows = data.map(item => Object.values(item).map(v => `"${v}"`).join(',')).join('\n');
@@ -434,6 +498,7 @@ export default function AdminPage() {
           {[
             { icon: FileText, value: admissionForms.length, label: 'Admissions', color: 'text-primary' },
             { icon: MessageSquare, value: contactForms.length, label: 'Messages', color: 'text-emerald-600' },
+            { icon: MessageCircle, value: anonymousMessages.filter(m => !m.is_read).length, label: 'Unread Anonymous', color: 'text-orange-600' },
             { icon: ImageIcon, value: galleryImages.length, label: 'Gallery', color: 'text-blue-600' },
             { icon: Scale, value: rules.length, label: 'Rules', color: 'text-purple-600' },
             { icon: FolderOpen, value: resources.length, label: 'Resources', color: 'text-accent' },
@@ -452,10 +517,11 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="admissions" className="space-y-6 animate-fade-in-up delay-300">
-          <TabsList className="grid w-full max-w-3xl grid-cols-5 h-auto p-1">
+          <TabsList className="grid w-full max-w-4xl grid-cols-6 h-auto p-1">
             {[
               { value: 'admissions', icon: FileText, label: 'Admissions', count: admissionForms.length },
-              { value: 'contacts', icon: MessageSquare, label: 'Messages', count: contactForms.length },
+              { value: 'contacts', icon: MessageSquare, label: 'Contacts', count: contactForms.length },
+              { value: 'anonymous', icon: MessageCircle, label: 'Anonymous', count: anonymousMessages.filter(m => !m.is_read).length },
               { value: 'gallery', icon: ImageIcon, label: 'Gallery', count: galleryImages.length },
               { value: 'rules', icon: Scale, label: 'Rules', count: rules.length },
               { value: 'resources', icon: FolderOpen, label: 'Resources', count: resources.length },
@@ -463,7 +529,7 @@ export default function AdminPage() {
               <TabsTrigger key={tab.value} value={tab.value} className="gap-1 text-xs md:text-sm py-2">
                 <tab.icon className="h-3.5 w-3.5 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">{tab.label}</span>
-                <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-full text-xs">{tab.count}</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-xs ${tab.value === 'anonymous' && tab.count > 0 ? 'bg-orange-500 text-white' : 'bg-primary/10 text-primary'}`}>{tab.count}</span>
               </TabsTrigger>
             ))}
           </TabsList>
@@ -535,66 +601,56 @@ export default function AdminPage() {
             </div>
           </TabsContent>
 
-          {/* Contacts Tab */}
-          <TabsContent value="contacts" className="animate-fade-in">
+          {/* Anonymous Messages Tab */}
+          <TabsContent value="anonymous" className="animate-fade-in">
             <div className="bg-card rounded-xl shadow-card overflow-hidden">
-              <div className="p-4 border-b border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <h3 className="font-display font-semibold text-foreground">Contact Messages</h3>
-                {contactForms.length > 0 && (
-                  <Button variant="outline" size="sm" onClick={() => exportToCSV(contactForms, 'contacts.csv')} className="gap-2">
-                    <Download className="h-4 w-4" />
-                    Export CSV
-                  </Button>
-                )}
+              <div className="p-4 border-b border-border">
+                <h3 className="font-display font-semibold text-foreground">Anonymous Student Messages</h3>
               </div>
               {loading ? (
                 <div className="p-12 text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                 </div>
-              ) : contactForms.length === 0 ? (
+              ) : anonymousMessages.length === 0 ? (
                 <div className="p-8 md:p-12 text-center">
-                  <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-float" />
-                  <p className="font-body text-muted-foreground">No contact messages yet</p>
+                  <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-float" />
+                  <p className="font-body text-muted-foreground">No anonymous messages yet</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="min-w-[100px]">Name</TableHead>
-                        <TableHead className="hidden sm:table-cell">Email</TableHead>
-                        <TableHead className="hidden md:table-cell">Subject</TableHead>
-                        <TableHead className="hidden lg:table-cell max-w-[200px]">Message</TableHead>
-                        <TableHead className="hidden md:table-cell">Date</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {contactForms.map((form) => (
-                        <TableRow key={form.id} className="hover:bg-secondary/50 transition-colors">
-                          <TableCell className="font-medium">{form.name}</TableCell>
-                          <TableCell className="hidden sm:table-cell text-sm">{form.email}</TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            <span className="px-2 py-1 bg-secondary text-secondary-foreground rounded text-xs">{form.subject || 'General'}</span>
-                          </TableCell>
-                          <TableCell className="hidden lg:table-cell max-w-[200px] truncate text-sm text-muted-foreground">{form.message}</TableCell>
-                          <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                            {new Date(form.submitted_at).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="icon" onClick={() => setShowFormDetails({ type: 'contact', data: form })} className="h-8 w-8">
-                                <Eye className="h-4 w-4 text-primary" />
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => setDeleteConfirm({ type: 'contact', id: form.id })} className="h-8 w-8">
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
+                <div className="divide-y divide-border">
+                  {anonymousMessages.map((msg) => (
+                    <div key={msg.id} className={`p-4 ${!msg.is_read ? 'bg-orange-50 dark:bg-orange-900/10' : ''}`}>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <code className="text-xs bg-muted px-2 py-1 rounded">{msg.message_code}</code>
+                            {!msg.is_read && <span className="text-xs bg-orange-500 text-white px-2 py-0.5 rounded">New</span>}
+                            {msg.admin_reply && <CheckCircle className="h-4 w-4 text-green-500" />}
+                          </div>
+                          <p className="text-sm text-foreground mb-2">{msg.message}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(msg.submitted_at).toLocaleString()}
+                          </p>
+                          {msg.admin_reply && (
+                            <div className="mt-3 p-3 bg-primary/10 rounded-lg">
+                              <p className="text-xs font-medium text-primary mb-1">Your Reply:</p>
+                              <p className="text-sm">{msg.admin_reply}</p>
                             </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {!msg.admin_reply && (
+                            <Button variant="ghost" size="icon" onClick={() => { setReplyingMessage(msg); setReplyText(''); if (!msg.is_read) handleMarkAsRead(msg.id); }} className="h-8 w-8">
+                              <Send className="h-4 w-4 text-primary" />
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteConfirm({ type: 'anonymous', id: msg.id })} className="h-8 w-8">
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
