@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -130,7 +130,7 @@ const QuizPage = () => {
   const chapters = selectedClass && selectedSubject ? classChapters[selectedClass]?.[selectedSubject] || [] : [];
 
   // Timer effect
-  useState(() => {
+  useEffect(() => {
     let interval: NodeJS.Timeout;
     if (timerActive && timeRemaining > 0) {
       interval = setInterval(() => {
@@ -144,7 +144,7 @@ const QuizPage = () => {
       }, 1000);
     }
     return () => clearInterval(interval);
-  });
+  }, [timerActive, timeRemaining]);
 
   const handleTimeUp = () => {
     setTimerActive(false);
@@ -184,9 +184,9 @@ const QuizPage = () => {
     try {
       const { data, error } = await supabase.functions.invoke("generate-quiz", {
         body: {
-          class: selectedClass,
+          classLevel: selectedClass,
           subject: selectedSubject,
-          chapter: selectedChapter,
+          chapters: [selectedChapter],
           difficulty: selectedDifficulty,
           questionCount: questionCount
         },
