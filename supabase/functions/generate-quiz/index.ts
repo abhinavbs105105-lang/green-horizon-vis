@@ -11,14 +11,28 @@ serve(async (req) => {
   }
 
   try {
-    const { classLevel, subject, chapters, difficulty = 'medium', questionCount = 10 } = await req.json();
+    const body = await req.json();
+    const { 
+      classLevel, 
+      subject, 
+      chapters, 
+      chapter, 
+      difficulty = 'medium', 
+      questionCount = 10,
+      class: classFromBody 
+    } = body;
+    
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const chaptersText = chapters.join(", ");
+    // Handle both 'class' and 'classLevel' parameters
+    const selectedClass = classLevel || classFromBody || "Class 10";
+    
+    // Handle both 'chapters' (array) and 'chapter' (string) parameters
+    const chaptersText = chapters ? chapters.join(", ") : (chapter || "General");
     
     const difficultyDescriptions: Record<string, string> = {
       easy: "simple and straightforward, focusing on basic recall and fundamental concepts. Use simple language appropriate for beginners.",
