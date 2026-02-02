@@ -1,9 +1,10 @@
 import { useState, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown, GraduationCap, Phone } from 'lucide-react';
+import { Menu, X, ChevronDown, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAdmin } from '@/contexts/AdminContext';
+import { Logo } from '@/components/Logo';
 import {
   Dialog,
   DialogContent,
@@ -111,8 +112,8 @@ export function Header() {
               onClick={handleLogoClick}
               className="flex items-center gap-2 sm:gap-3 cursor-pointer group"
             >
-              <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-gradient-hero shadow-soft transition-transform duration-300 group-hover:scale-110">
-                <GraduationCap className="h-5 w-5 sm:h-7 sm:w-7 text-primary-foreground" />
+              <div className="transition-transform duration-300 group-hover:scale-110">
+                <Logo size="md" />
               </div>
               <div className="flex flex-col">
                 <h1 className="font-display text-base sm:text-xl font-bold text-primary leading-tight">
