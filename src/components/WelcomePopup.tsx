@@ -29,8 +29,8 @@ export function WelcomePopup() {
           <span className="sr-only">Close</span>
         </Button>
         <DialogHeader className="pt-6">
-          <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            ZyNkr0nyx
+          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            A Demo Website Created by Shivam Singh.
           </DialogTitle>
         </DialogHeader>
         <div className="py-6">
