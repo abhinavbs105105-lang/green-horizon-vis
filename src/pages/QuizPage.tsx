@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
-import { Brain, BookOpen, CheckCircle, XCircle, Trophy, RotateCcw, Clock, Timer, AlertTriangle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Brain, BookOpen, CheckCircle, XCircle, Trophy, RotateCcw, Clock, Timer, AlertTriangle, Plus, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollReveal } from "@/components/animations/ScrollReveal";
@@ -109,6 +111,10 @@ const QuizPage = () => {
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [selectedChapter, setSelectedChapter] = useState<string>("");
+  const [useCustomChapters, setUseCustomChapters] = useState<boolean>(false);
+  const [customChapters, setCustomChapters] = useState<string[]>([]);
+  const [customChapterInput, setCustomChapterInput] = useState<string>("");
+  const customInputRef = useRef<HTMLInputElement>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("medium");
   const [questionCount, setQuestionCount] = useState<number>(10);
   const [timedMode, setTimedMode] = useState<boolean>(false);
@@ -170,14 +176,19 @@ const QuizPage = () => {
   };
 
   const startQuiz = async () => {
-    if (!selectedClass || !selectedSubject || !selectedChapter) {
+    const hasChapters = useCustomChapters ? customChapters.length > 0 : !!selectedChapter;
+    if (!selectedClass || !selectedSubject || !hasChapters) {
       toast({
         title: "Selection Required",
-        description: "Please select class, subject, and chapter to start the quiz.",
+        description: useCustomChapters
+          ? "Please select class, subject, and add at least one custom chapter."
+          : "Please select class, subject, and chapter to start the quiz.",
         variant: "destructive",
       });
       return;
     }
+
+    const chaptersToSend = useCustomChapters ? customChapters : [selectedChapter];
 
     setIsLoading(true);
     try {
@@ -185,7 +196,7 @@ const QuizPage = () => {
         body: {
           classLevel: selectedClass,
           subject: selectedSubject,
-          chapters: [selectedChapter],
+          chapters: chaptersToSend,
           difficulty: selectedDifficulty,
           questionCount: questionCount
         },
@@ -259,6 +270,9 @@ const QuizPage = () => {
     setShowResult(false);
     setTimerActive(false);
     setTimeRemaining(0);
+    setCustomChapters([]);
+    setCustomChapterInput("");
+    setUseCustomChapters(false);
   };
 
   const getTimerColor = () => {
@@ -346,18 +360,87 @@ const QuizPage = () => {
 
                       {/* Chapter Selection */}
                       {selectedSubject && (
-                        <div className="space-y-2">
-                          <Label>Select Chapter</Label>
-                          <Select value={selectedChapter} onValueChange={setSelectedChapter}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Choose your chapter" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {chapters.map((chapter) => (
-                                <SelectItem key={chapter} value={chapter}>{chapter}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Label>Chapters</Label>
+                            <div className="flex items-center gap-2">
+                              <Label htmlFor="custom-toggle" className="text-sm text-muted-foreground cursor-pointer">Custom</Label>
+                              <Switch
+                                id="custom-toggle"
+                                checked={useCustomChapters}
+                                onCheckedChange={(checked) => {
+                                  setUseCustomChapters(checked);
+                                  setSelectedChapter("");
+                                  setCustomChapters([]);
+                                  setCustomChapterInput("");
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          {!useCustomChapters ? (
+                            <Select value={selectedChapter} onValueChange={setSelectedChapter}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Choose your chapter" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {chapters.map((chapter) => (
+                                  <SelectItem key={chapter} value={chapter}>{chapter}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <div className="space-y-3">
+                              <div className="flex gap-2">
+                                <Input
+                                  ref={customInputRef}
+                                  placeholder="Type a chapter/topic name and press Enter"
+                                  value={customChapterInput}
+                                  onChange={(e) => setCustomChapterInput(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && customChapterInput.trim()) {
+                                      e.preventDefault();
+                                      setCustomChapters((prev) => [...prev, customChapterInput.trim()]);
+                                      setCustomChapterInput("");
+                                    }
+                                  }}
+                                />
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="outline"
+                                  disabled={!customChapterInput.trim()}
+                                  onClick={() => {
+                                    if (customChapterInput.trim()) {
+                                      setCustomChapters((prev) => [...prev, customChapterInput.trim()]);
+                                      setCustomChapterInput("");
+                                      customInputRef.current?.focus();
+                                    }
+                                  }}
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              {customChapters.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                  {customChapters.map((ch, i) => (
+                                    <Badge key={i} variant="secondary" className="gap-1 pr-1">
+                                      {ch}
+                                      <button
+                                        onClick={() => setCustomChapters((prev) => prev.filter((_, idx) => idx !== i))}
+                                        className="ml-1 rounded-full hover:bg-muted p-0.5"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </button>
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                              <p className="text-xs text-muted-foreground">
+                                Add any chapter or topic name — the AI will generate questions based on your input for {selectedClass} {selectedSubject}.
+                              </p>
+                            </div>
+                          )}
                         </div>
                       )}
 
