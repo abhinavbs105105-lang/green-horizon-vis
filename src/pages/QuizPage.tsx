@@ -542,7 +542,7 @@ const QuizPage = () => {
 
                       <Button
                         onClick={startQuiz}
-                        disabled={isLoading || !selectedChapter}
+                        disabled={isLoading || (useCustomChapters ? customChapters.length === 0 : !selectedChapter)}
                         className="w-full"
                         size="lg"
                       >
